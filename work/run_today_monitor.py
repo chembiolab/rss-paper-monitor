@@ -6,11 +6,13 @@ ROOT = Path(__file__).resolve().parents[1]
 KST = dt.timezone(dt.timedelta(hours=9))
 NOW = dt.datetime.now(KST)
 TOPICS = ["serine protease", "cysteine protease", "HTRA", "fluorescent probe", "activity-based probe", "peptide design", "protein binder design", "AI-driven peptide design"]
-RSC_ISSNS = {
+CROSSREF_ISSNS = {
     'Chemical Science': '2041-6539',
     'Organic & Biomolecular Chemistry': '1477-0520',
     'RSC Chemical Biology': '2633-0679',
     'Sensors & Diagnostics': '2635-0998',
+    'Chemical Society Reviews': '1460-4744',
+    'Cell Chemical Biology': '2451-9456',
 }
 STATE_PATH = ROOT / "work/rss-paper-monitor-state.json"
 state = json.loads(STATE_PATH.read_text()) if STATE_PATH.exists() else {}
@@ -69,16 +71,29 @@ def korean_summary(p):
     if text == '초록 확인 불가':
         return f"이 논문은 {topic}와 관련된 주제를 다룹니다. 제공된 초록이 없어 제목과 서지 정보만으로 핵심 범위를 정리했습니다. 세부 연구 내용은 연결된 원문 또는 PubMed 페이지에서 확인할 수 있습니다."
     return f"이 논문은 {topic}와 관련된 연구를 보고합니다. 초록에서는 연구 대상의 특성, 분석 또는 설계 접근법과 주요 관찰 결과를 제시합니다. 세부 실험 조건과 정량 결과는 연결된 원문 또는 PubMed 페이지에서 확인할 수 있습니다."
-def rsc_crossref_fallback(journal, issn):
-    """RSC's feed host terminates TLS on GitHub runners; query the same journal's DOI registry."""
+def crossref_journal_fallback(journal, issn):
+    """Use a journal's DOI registry when its publisher RSS rejects GitHub runners."""
     global successful_rss_fetches
-    query=urllib.parse.urlencode({'filter':f'from-pub-date:{since:%Y-%m-%d},until-pub-date:{NOW:%Y-%m-%d},type:journal-article','sort':'published','order':'desc','rows':100})
+    query=urllib.parse.urlencode({'filter':f'from-online-pub-date:{since:%Y-%m-%d},until-online-pub-date:{NOW:%Y-%m-%d},type:journal-article','sort':'published','order':'desc','rows':100})
     works=json.loads(get(f'https://api.crossref.org/journals/{issn}/works?{query}'))['message']['items']
     added=0
     for w in works:
         title=clean((w.get('title') or [''])[0]); doi=w.get('DOI','DOI 없음')
         authors=', '.join(' '.join(x for x in (a.get('family',''),a.get('given','')) if x) for a in w.get('author',[])) or '저자 정보 없음'
-        p={'source':'RSC (Crossref 대체 수집)','title':title,'journal':journal,'doi':doi,'pmid':'','url':w.get('URL') or (f'https://doi.org/{doi}' if doi != 'DOI 없음' else ''),'abstract':'초록 확인 불가','authors':authors}
+        p={'source':'RSS 대체 수집 (Crossref)','title':title,'journal':journal,'doi':doi,'pmid':'','url':w.get('URL') or (f'https://doi.org/{doi}' if doi != 'DOI 없음' else ''),'abstract':'초록 확인 불가','authors':authors}
+        if title and not any(k in seen for k in identities(p)): items.append(p); added += 1
+    successful_rss_fetches += 1
+    return added
+def crossref_prefix_fallback(journal, prefix):
+    """ChemRxiv preprints have Crossref DOIs under their registered prefix."""
+    global successful_rss_fetches
+    query=urllib.parse.urlencode({'filter':f'from-online-pub-date:{since:%Y-%m-%d},until-online-pub-date:{NOW:%Y-%m-%d}','sort':'published','order':'desc','rows':100})
+    works=json.loads(get(f'https://api.crossref.org/prefixes/{prefix}/works?{query}'))['message']['items']
+    added=0
+    for w in works:
+        title=clean((w.get('title') or [''])[0]); doi=w.get('DOI','DOI 없음')
+        authors=', '.join(' '.join(x for x in (a.get('family',''),a.get('given','')) if x) for a in w.get('author',[])) or '저자 정보 없음'
+        p={'source':'RSS 대체 수집 (Crossref)','title':title,'journal':journal,'doi':doi,'pmid':'','url':w.get('URL') or (f'https://doi.org/{doi}' if doi != 'DOI 없음' else ''),'abstract':'초록 확인 불가','authors':authors}
         if title and not any(k in seen for k in identities(p)): items.append(p); added += 1
     successful_rss_fetches += 1
     return added
@@ -105,12 +120,19 @@ for journal,url in feeds:
             if not any(k in seen for k in identities(p)): items.append(p); added+=1
         rss_counts[journal]=added
     except Exception as ex:
-        if journal in RSC_ISSNS:
+        if journal in CROSSREF_ISSNS:
             try:
-                rss_counts[journal]=rsc_crossref_fallback(journal, RSC_ISSNS[journal])
+                rss_counts[journal]=crossref_journal_fallback(journal, CROSSREF_ISSNS[journal])
                 continue
             except Exception as fallback_ex:
-                errors.append(f"RSC {journal} RSS 및 대체 수집 실패: {type(fallback_ex).__name__}: {str(fallback_ex)[:120]}")
+                errors.append(f"{journal} RSS 및 Crossref 대체 수집 실패: {type(fallback_ex).__name__}: {str(fallback_ex)[:120]}")
+                continue
+        if journal == 'ChemRxiv':
+            try:
+                rss_counts[journal]=crossref_prefix_fallback(journal, '10.26434')
+                continue
+            except Exception as fallback_ex:
+                errors.append(f"ChemRxiv RSS 및 대체 수집 실패: {type(fallback_ex).__name__}: {str(fallback_ex)[:120]}")
                 continue
         errors.append(f"RSS {journal}: {type(ex).__name__}: {str(ex)[:140]}")
 
