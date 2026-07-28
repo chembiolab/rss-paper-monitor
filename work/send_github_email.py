@@ -15,8 +15,8 @@ subject = f"[논문 모니터] {run_date}" + (" (새 논문 없음)" if not item
 lines = [f"중복 제거 후 신규 논문: {len(items)}건", ""]
 if items:
     lines.append("이번 보고서의 논문")
-    for p in items[:10]:
-        lines.append(f"- {p['title']}: {p['summary'].split(' ', 1)[0]}")
+    for p in items[:20]:
+        lines.append(f"- {p['title']}")
 else:
     lines.append("이번 실행에서 새 논문은 없습니다.")
 if result.get("errors"):
