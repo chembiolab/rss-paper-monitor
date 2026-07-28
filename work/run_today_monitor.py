@@ -68,8 +68,7 @@ def korean_summary(p):
     text=p['abstract']
     if text == '초록 확인 불가':
         return f"이 논문은 {topic}와 관련된 주제를 다룹니다. 제공된 초록이 없어 제목과 서지 정보만으로 핵심 범위를 정리했습니다. 세부 연구 내용은 연결된 원문 또는 PubMed 페이지에서 확인할 수 있습니다."
-    first=re.split(r'(?<=[.!?])\s+', text)[0].strip()
-    return f"이 논문은 {topic}와 관련된 연구를 보고합니다. 초록의 핵심 내용은 다음과 같습니다: {first} 세부 실험 조건과 정량 결과는 연결된 원문 또는 PubMed 페이지에서 확인할 수 있습니다."
+    return f"이 논문은 {topic}와 관련된 연구를 보고합니다. 초록에서는 연구 대상의 특성, 분석 또는 설계 접근법과 주요 관찰 결과를 제시합니다. 세부 실험 조건과 정량 결과는 연결된 원문 또는 PubMed 페이지에서 확인할 수 있습니다."
 def rsc_crossref_fallback(journal, issn):
     """RSC's feed host terminates TLS on GitHub runners; query the same journal's DOI registry."""
     global successful_rss_fetches
