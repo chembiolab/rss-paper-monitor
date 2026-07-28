@@ -64,13 +64,6 @@ def labels(p):
     for name, words in keys.items():
         if name not in out and any(w in hay for w in words): out.append(name)
     return out or ['기타']
-def korean_summary(p):
-    """Keep the report readable: expose a three-sentence Korean digest, never raw abstract."""
-    topic=', '.join(p['labels']) if p['labels'] != ['기타'] else '생명·화학 연구'
-    text=p['abstract']
-    if text == '초록 확인 불가':
-        return f"이 논문은 {topic}와 관련된 주제를 다룹니다. 제공된 초록이 없어 제목과 서지 정보만으로 핵심 범위를 정리했습니다. 세부 연구 내용은 연결된 원문 또는 PubMed 페이지에서 확인할 수 있습니다."
-    return f"이 논문은 {topic}와 관련된 연구를 보고합니다. 초록에서는 연구 대상의 특성, 분석 또는 설계 접근법과 주요 관찰 결과를 제시합니다. 세부 실험 조건과 정량 결과는 연결된 원문 또는 PubMed 페이지에서 확인할 수 있습니다."
 def crossref_journal_fallback(journal, issn):
     """Use a journal's DOI registry when its publisher RSS rejects GitHub runners."""
     global successful_rss_fetches
@@ -165,7 +158,7 @@ for p in items:
 items=list(dict.fromkeys(map(id,unique.values())))
 # retain objects after identity de-duplication
 seen_obj=set(); items=[p for p in unique.values() if not (id(p) in seen_obj or seen_obj.add(id(p)))]
-for p in items: p['labels']=labels(p); p['summary']=korean_summary(p)
+for p in items: p['labels']=labels(p)
 items.sort(key=lambda p:p['title'].lower())
 result={'run_at':NOW.isoformat(),'since':since.isoformat(),'rss_feed_count':len(feeds),'rss_counts':rss_counts,'pubmed_counts':pub_counts,'items':items,'errors':errors,'successful_rss_fetches':successful_rss_fetches,'successful_pubmed_queries':successful_pubmed_queries,'collection_succeeded':bool(successful_rss_fetches or successful_pubmed_queries),'new_seen':sorted({v for p in items for v in identities(p) if not v.startswith('title:')})}
 (ROOT/'work/run-result.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
