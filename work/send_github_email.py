@@ -10,17 +10,15 @@ ROOT = Path(__file__).resolve().parents[1]
 result = json.loads((ROOT / "work/run-result.json").read_text(encoding="utf-8"))
 run_date = result["run_at"][:10]
 items = result["items"]
-high = [p for p in items if p["relevance"] == "높음"]
 subject = f"[논문 모니터] {run_date}" + (" (새 논문 없음)" if not items else "")
 
 lines = [f"중복 제거 후 신규 논문: {len(items)}건", ""]
-if high:
-    lines.append("관련성 높음 논문")
-    for p in high:
-        one_line = p["summary"].split(". ", 1)[0].strip()
-        lines.append(f"- {p['title']}: {one_line}")
+if items:
+    lines.append("이번 보고서의 논문")
+    for p in items[:10]:
+        lines.append(f"- {p['title']}: {p['summary'].split(' ', 1)[0]}")
 else:
-    lines.append("관련성 높음 논문: 없음")
+    lines.append("이번 실행에서 새 논문은 없습니다.")
 if result.get("errors"):
     lines += ["", f"수집 오류: {len(result['errors'])}건 (첨부 보고서 참조)"]
 
