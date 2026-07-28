@@ -24,7 +24,7 @@ jobs:
 
       - name: Collect RSS and PubMed records
         run: |
-          python work/run_today_monitor.py
+          python work/run_monitor_with_rsc_fallback.py
           python work/render_report_html.py
 
       - name: Send HTML report through Gmail SMTP
