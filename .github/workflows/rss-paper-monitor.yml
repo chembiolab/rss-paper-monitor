@@ -1,6 +1,16 @@
 name: RSS and PubMed paper monitor
 
 on:
+  # Code/feed changes trigger one verification run; report/state commits are excluded to avoid a loop.
+  push:
+    branches: [main]
+    paths:
+      - 'rss-feeds.md'
+      - 'work/run_today_monitor.py'
+      - 'work/run_monitor_with_rsc_fallback.py'
+      - 'work/render_report_html.py'
+      - 'work/send_github_email.py'
+      - '.github/workflows/rss-paper-monitor.yml'
   schedule:
     # 07:00 Asia/Seoul (UTC+9). GitHub Actions cron uses UTC.
     - cron: '0 22 * * *'
