@@ -1,0 +1,43 @@
+name: RSS and PubMed paper monitor
+
+on:
+  schedule:
+    # 07:00 Asia/Seoul (UTC+9). GitHub Actions cron uses UTC.
+    - cron: '0 22 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  collect-and-email:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Collect RSS and PubMed records
+        run: |
+          python work/run_today_monitor.py
+          python work/render_report_html.py
+
+      - name: Send HTML report through Gmail SMTP
+        env:
+          SMTP_USERNAME: ${{ secrets.RSS_MONITOR_GMAIL_USERNAME }}
+          SMTP_APP_PASSWORD: ${{ secrets.RSS_MONITOR_GMAIL_APP_PASSWORD }}
+          MONITOR_RECIPIENT: jlee@sungshin.ac.kr
+        run: python work/send_github_email.py
+
+      - name: Commit report and monitor state
+        run: |
+          git config user.name 'rss-paper-monitor[bot]'
+          git config user.email 'rss-paper-monitor[bot]@users.noreply.github.com'
+          git add outputs work/rss-paper-monitor-state.json
+          git diff --cached --quiet || git commit -m "chore: update paper monitor report"
+          git push
