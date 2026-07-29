@@ -1,4 +1,3 @@
-# Manual verification trigger: 2026-07-29 (Asia/Seoul)
 name: RSS and PubMed paper monitor
 
 on:
@@ -11,17 +10,38 @@ on:
       - 'work/run_monitor_with_rsc_fallback.py'
       - 'work/render_report_html.py'
       - 'work/send_github_email.py'
+      - 'work/has_successful_run_today.py'
       - '.github/workflows/rss-paper-monitor.yml'
   schedule:
-    # 07:00 Asia/Seoul (UTC+9). GitHub Actions cron uses UTC.
-    - cron: '0 22 * * *'
+    # Avoid GitHub Actions' high-load top-of-hour window.
+    - cron: '7 22 * * *'   # 07:07 Asia/Seoul: primary run
+    - cron: '22 22 * * *'  # 07:22 Asia/Seoul: retry only when primary did not succeed
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.gate.outputs.should_run }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: gate
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          if [ "$SCHEDULE" = "22 22 * * *" ] && python work/has_successful_run_today.py; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "Primary run already succeeded today; retry collection is skipped."
+          else
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          fi
+
   collect-and-email:
+    needs: preflight
+    if: needs.preflight.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
