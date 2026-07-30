@@ -23,8 +23,7 @@
 | Angewandte Chemie International Edition | https://onlinelibrary.wiley.com/rss/journal/10.1002/(ISSN)1521-3773 |
 | ACS Chemical Biology | https://feeds.feedburner.com/acs/acbcct |
 | Analytical Chemistry | https://feeds.feedburner.com/acs/ancham |
-| Chemical & Engineering News | https://cen.acs.org/feeds/rss/latestnews.xml |
 
 ## Non-paper feeds (automatically excluded)
 
-NPR, Newsweek, New York Times, Scientific American, Science Translational Medicine's Pipeline blog, and 경향신문.
+NPR, Newsweek, New York Times, Scientific American, Science Translational Medicine's Pipeline blog, Chemical & Engineering News, and 경향신문.
