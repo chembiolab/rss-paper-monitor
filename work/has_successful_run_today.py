@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Exit successfully only when today's KST monitor run already succeeded."""
+# Manual recovery trigger: 2026-07-30 (Asia/Seoul)
 import datetime as dt
 import json
 from pathlib import Path
