@@ -70,7 +70,10 @@ def labels(paper):
 
 result = json.loads(RESULT_PATH.read_text(encoding="utf-8"))
 state = json.loads(STATE_PATH.read_text(encoding="utf-8"))
-since = dt.datetime.fromisoformat(result["since"]).astimezone(KST)
+last_success = dt.datetime.fromisoformat(result["since"]).astimezone(KST)
+# Publisher feeds have been incomplete; always reconcile the last 48 hours once,
+# while persistent DOI/URL de-duplication keeps repeat runs safe.
+since = min(last_success, dt.datetime.now(KST) - dt.timedelta(hours=48))
 seen = {str(value).lower() for value in state.get("seen_items", [])}
 known = {identity for paper in result["items"] for identity in identities(paper)}
 context = ssl.create_default_context()
