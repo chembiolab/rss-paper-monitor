@@ -7,9 +7,7 @@ r=json.loads((ROOT/'work/run-result.json').read_text(encoding='utf-8'))
 today=dt.datetime.fromisoformat(r['run_at']).date().isoformat()
 def esc(s): return html.escape(str(s or ''))
 def link(url,label=None): return f'<a href="{esc(url)}">{esc(label or url)}</a>'
-direct_rss=sum(r["rss_counts"].values())
-backfill=r.get("rss_backfill_added",0)
-parts=[f'<h1>논문 모니터 — {today}</h1>', '<section class="summary"><h2>실행 요약</h2>',f'<p>실행 시각: {esc(r["run_at"])}</p>',f'<p>이전 성공 실행 기준: {esc(r["since"])}</p>',f'<p>확인 RSS 피드: {r["rss_feed_count"]}개 (응답 {r.get("successful_rss_fetches",0)}개)</p>',f'<p>직접 RSS 신규 수집: {direct_rss}건</p>',f'<p>저널 RSS 보강 수집 (Crossref): {backfill}건</p>','<p>PubMed 검색어별 수집 수:</p><ul>']
+parts=[f'<h1>논문 모니터 — {today}</h1>', '<section class="summary"><h2>실행 요약</h2>',f'<p>실행 시각: {esc(r["run_at"])}</p>',f'<p>이전 성공 실행 기준: {esc(r["since"])}</p>',f'<p>수집 방식: PubMed 주제 검색 8개</p>','<p>PubMed 검색어별 수집 수:</p><ul>']
 parts += [f'<li>{esc(k)}: {v}건</li>' for k,v in r['pubmed_counts'].items()]
 parts += [f'</ul><p><strong>중복 제거 후 신규 논문: {len(r["items"])}건</strong></p></section>']
 if r['errors']:
