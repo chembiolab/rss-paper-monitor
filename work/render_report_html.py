@@ -12,7 +12,7 @@ parts += [f'<li>{esc(k)}: {v}건</li>' for k,v in r['pubmed_counts'].items()]
 parts += [f'</ul><p><strong>중복 제거 후 신규 논문: {len(r["items"])}건</strong></p></section>']
 if r['errors']:
     parts += ['<section><h2>수집 오류</h2><ul>']+[f'<li>{esc(x)}</li>' for x in r['errors']]+['</ul></section>']
-if not r['items']: parts.append('<section><h2>새 논문 없음</h2><p>이번 실행 기준으로 새 RSS·PubMed 논문이 없습니다.</p></section>')
+if not r['items']: parts.append('<section><h2>새 논문 없음</h2><p>이번 실행 기준으로 새 PubMed 논문이 없습니다.</p></section>')
 for i,p in enumerate(r['items'],1):
     doi='DOI 없음' if p['doi']=='DOI 없음' else link('https://doi.org/'+p['doi'],p['doi'])
     pmid=esc(p['pmid']) if p['pmid'] else '해당 없음'
